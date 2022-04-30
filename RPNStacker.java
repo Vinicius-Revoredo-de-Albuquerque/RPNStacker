@@ -1,36 +1,69 @@
+package RPNStacker;
+
 import java.io.File;
 import java.lang.Thread.State;
-import java.util.Stack;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-class RPNStacker {
+public class RPNStacker {
     public static void main(String[] args) {
 
-        Stack<Integer> stack = new Stack<>();
-        String file_path = "C:/Users/vinic/Downloads/Calc1.stk";
+        ArrayList<task02.Token> tokenlist = new ArrayList<task02.Token>();
+        String file_path = "Calc1.stk";
         
         try {
             File file = new File(file_path);
             Scanner reader = new Scanner(file);
 
-            while (reader.hasNextLine()) {
+            while(reader.hasNextLine()) {
                 String character = reader.nextLine();
 
                 if(number(character)) {
-                    int number = Integer.parseInt(character);
-                    stack.push(number);
-                } /* se for número empilha e aguarda comando para operação */
+                    tokenlist.add(new task02.Token(task02.TokenType.NUM, character));
+                }
                 else {
-                    int pos_number = stack.pop();
-                    int pre_number = stack.pop();
-                    int current_result = solve(pre_number, pos_number, character);
-                    stack.push(current_result);
-                } /* se não for número é uma operação, então os 2 últimos
-                    valores são desempilhados e é chamada a função para
-                    identificar e realizar a operação */
+                    switch(character) {
+                        case "+":
+                            tokenlist.add(new task02.Token(task02.TokenType.PLUS, character));
+                            break;
+
+                        case "-":
+                            tokenlist.add(new task02.Token(task02.TokenType.MINUS, character));
+                            break;
+
+                        case "*":
+                            tokenlist.add(new task02.Token(task02.TokenType.STAR, character));
+                            break;
+
+                        case "/":
+                            tokenlist.add(new task02.Token(task02.TokenType.SLASH, character));
+                            break;
+
+                        default:
+                            System.out.println("Operation Nonexistent");
+                            break;
+                    }
+                }
+
+                // System.out.println(tokenlist);
             }
 
-            System.out.println(stack.pop());
+            while(tokenlist.size() > 1) { 
+                task02.Token num1 = tokenlist.remove(0);
+                if(num1.type != task02.TokenType.NUM) {throw new Exception("Error: not a numbera: " + num1.lexeme);}
+
+                task02.Token num2 = tokenlist.remove(0);
+                if(num2.type != task02.TokenType.NUM) {throw new Exception("Error: not a numberb: " + num2.lexeme);}
+
+                task02.Token operation = tokenlist.remove(0);
+                if(operation.type == task02.TokenType.NUM) {throw new Exception("Error: not a operation: " + operation.lexeme);}
+
+                task02.Token newToken = calculate(num1, num2, operation);
+                tokenlist.add(0, newToken); 
+            }
+
+            System.out.println("Resultado: " + tokenlist.remove(0).lexeme);
             reader.close();
         
         } catch (Exception error) {
@@ -43,25 +76,26 @@ class RPNStacker {
         return character.matches("\\d+");
     }
 
-    private static int solve(int a, int b, String op) {
+    private static task02.Token calculate(task02.Token a, task02.Token b, task02.Token operation) {
 
-        switch(op) {
-            case "+":
-                return (a + b);
+        int num1 = Integer.parseInt(a.lexeme);
+        int num2 = Integer.parseInt(b.lexeme);
 
-            case "-":
-                return (a - b);
-            
-            case "*":
-                return (a * b);
+        int  result = -1;
 
-            case "/":
-                return (int) (a / b);
-
-            default:
-                System.out.println("Operation Nonexistent");
-                return -1;
+        if(operation.type.equals(task02.TokenType.PLUS)) {  
+            result = num1 + num2; 
         }
+        if(operation.type.equals(task02.TokenType.MINUS)) {  
+            result = num1 - num2; 
+        }
+        if(operation.type.equals(task02.TokenType.STAR)) {  
+            result = num1 * num2; 
+        }
+        if(operation.type.equals(task02.TokenType.SLASH)) {  
+            result = num1 / num2; 
+        }
+
+        return new task02.Token(task02.TokenType.NUM, String.valueOf(result));
     }
-        
 }
